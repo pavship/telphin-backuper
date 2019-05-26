@@ -1,5 +1,5 @@
-const fromDateTime = '2019-04-11 14:51:38'
-const toDateTime = '2019-04-11 15:51:38'
+const fromDateTime = '2019-05-18 00:00:00'
+const toDateTime = '2019-05-19 00:00:00'
 
 const qs = require('qs')
 require('dotenv').config()
@@ -43,6 +43,8 @@ const execute = async () => {
 			recordBaseUrl + '?start_datetime=' + fromDateTime + '&end_datetime=' + toDateTime,
 			{ headers: { 'authorization': 'Bearer ' + token } }
 		)
+		// console.log('records > ', records)
+		// console.log('records.length > ', records.length)
 		await Promise.all(records.map( async ({
 			record_uuid,
 			start_time_gmt,
@@ -55,20 +57,9 @@ const execute = async () => {
 				{ headers: { 'authorization': 'Bearer ' + token } }
 			)
 			const { data: stream } = await axios.get( record_url, { responseType: 'stream'} )
-			return storeUpload(stream, downloadPath + `/${start_time_gmt.replace(/:/g,'-')}_${flow === 'in' ? from_username : to_username}.mp3`)
-			// return storeUpload(stream, downloadPath + `/1.mp3`)
+			const localDateTime = new Date(Date.parse(start_time_gmt) + 2*10800000).toISOString().slice(0,-5).replace('T',' ').replace(/:/g,'-')
+			return storeUpload(stream, downloadPath + `/${localDateTime}_${flow === 'in' ? from_username : to_username}.mp3`)
 		}))
-		// console.log('records[0] > ', records[0])
-		// const { record_uuid } = records[0]
-		// console.log('record_uuid > ', record_uuid)
-		// const { data: { record_url } } = await axios.get(
-		// 	'https://apiproxy.telphin.ru/api/ver1.0/client/@me/record/' + record_uuid + '/storage_url/',
-		// 	{ headers: { 'authorization': 'Bearer ' + token } }
-		// )
-		// console.log('record_url > ', record_url)
-		// const { data: stream } = await axios.get( record_url, { responseType: 'stream'} )
-		// await storeUpload(stream, downloadPath + '/1.mp3')
-
 	} catch (err) {
 		console.log('err > ', err)
 	}
