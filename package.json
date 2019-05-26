@@ -1,0 +1,14 @@
+{
+  "name": "telphin-backuper",
+  "version": "1.0.0",
+  "description": "backup telphine phone records",
+  "main": "index.js",
+  "repository": "https://github.com/pavship/telphin-backuper.git",
+  "author": "PS",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "dotenv": "^8.0.0",
+    "qs": "^6.7.0"
+  }
+}
