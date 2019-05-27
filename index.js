@@ -1,5 +1,6 @@
-const fromDateTime = '2019-05-18 00:00:00'
-const toDateTime = '2019-05-19 00:00:00'
+const fromDateTime = '2019-04-09 00:00:00'
+const toDateTime = '2019-05-10 00:00:00'
+const batchSize = 5
 
 const qs = require('qs')
 require('dotenv').config()
@@ -45,21 +46,30 @@ const execute = async () => {
 		)
 		// console.log('records > ', records)
 		// console.log('records.length > ', records.length)
-		await Promise.all(records.map( async ({
-			record_uuid,
-			start_time_gmt,
-			flow,
-			from_username,
-			to_username
-		}) => {
-			const { data: { record_url } } = await axios.get(
-				'https://apiproxy.telphin.ru/api/ver1.0/client/@me/record/' + record_uuid + '/storage_url/',
-				{ headers: { 'authorization': 'Bearer ' + token } }
-			)
-			const { data: stream } = await axios.get( record_url, { responseType: 'stream'} )
-			const localDateTime = new Date(Date.parse(start_time_gmt) + 2*10800000).toISOString().slice(0,-5).replace('T',' ').replace(/:/g,'-')
-			return storeUpload(stream, downloadPath + `/${localDateTime}_${flow === 'in' ? from_username : to_username}.mp3`)
-		}))
+		const batches = records.reduce((batches, r) => {
+			let lastBatch = batches[batches.length - 1]
+			if (lastBatch.length === batchSize) lastBatch = batches[batches.length] = []
+			lastBatch.push(r)
+			return batches
+		}, [[]])
+		for (let batch of batches) {
+			await Promise.all(batch.map( async ({
+				record_uuid,
+				start_time_gmt,
+				flow,
+				from_username,
+				to_username
+			}) => {
+				const { data: { record_url } } = await axios.get(
+					'https://apiproxy.telphin.ru/api/ver1.0/client/@me/record/' + record_uuid + '/storage_url/',
+					{ headers: { 'authorization': 'Bearer ' + token } }
+				)
+				const { data: stream } = await axios.get( record_url, { responseType: 'stream'} )
+				const localDateTime = new Date(Date.parse(start_time_gmt) + 2*10800000).toISOString().slice(0,-5).replace('T',' ').replace(/:/g,'-')
+				const number = (flow === 'in' ? from_username : to_username).replace('*','')
+				return storeUpload(stream, downloadPath + `/${localDateTime}_${number}.mp3`)
+			}))
+		}
 	} catch (err) {
 		console.log('err > ', err)
 	}
